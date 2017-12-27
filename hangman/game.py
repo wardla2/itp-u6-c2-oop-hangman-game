@@ -54,7 +54,9 @@ class HangmanGame(object):
     WORD_LIST = ['rmotr', 'python', 'awesome']
     
     def __init__(self, word_list=WORD_LIST, number_of_guesses=5):
-        self.word_list = word_list   
+        self.word_list = word_list
+        if not self.word_list:
+            self.word_list = HangmanGame.WORD_LIST   
         self.guesses = number_of_guesses
         self.remaining_misses = number_of_guesses
         random_word = HangmanGame.select_random_word(self.word_list)
