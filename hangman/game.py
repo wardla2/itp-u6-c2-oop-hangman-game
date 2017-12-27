@@ -1,99 +1,104 @@
 from .exceptions import *
 import random
 
-# Complete with your own, just for fun :)
-LIST_OF_WORDS = []
-
 #GuessAttempt: An attempt to guess a letter.
 class GuessAttempt(object):
-    pass
     
-    attempt = word.perform_attempt('x')
+    def __init__(self, c, hit=False, miss=False):
+        self.char = c
+        self.hit = hit
+        self.miss = miss
+        if hit == miss:
+            raise InvalidGuessAttempt
+            
+    def is_hit(self):
+        return self.hit
     
-    def __init__(self):
-        pass
-    
-    def is_hit():
-        '''
-        for i in range(len(answer_word)):
-                if answer_word[i].lower() == character.lower():
-        return True''' 
-        pass
-    
-    def is_miss():
-        '''
-        for i in range(len(answer_word)):
-                if answer_word[i].lower() != character.lower():
-        return False'''
-        pass
-
-#GuessWord: A word to guess. Is used by a HangmanGame to keep track of the word to guess.
-class GuessWord(object): 
-    pass
-    
-    word = GuessWord('xyz')
-    
-    def perform_attempt():
-        '''
-        if len(answer_word) == 0 or len(answer_word) != len(masked_word):
-            raise InvalidWordException
-        if len(character) != 1:
-            raise InvalidGuessedLetterException
-        new_masked = ''
-        for i in range(len(answer_word)):
-            if answer_word[i].lower() == character.lower():
-                new_masked += answer_word[i].lower()
-            else:
-                new_masked += masked_word[i]
-        return new_masked
+    def is_miss(self):
+        return self.miss
         
-      def guess_letter(game, letter):
-        if game['masked_word'].find('*') == -1 or game['remaining_misses'] <= 0:
-            raise GameFinishedException
+#GuessWord: A word to guess. Is used by a HangmanGame to keep track of the word to guess.
+class GuessWord(object):
+
+    def __init__(self, word):
+        self.answer = word
+        
+        if len(word) == 0:
+            raise InvalidWordException
+        
+        self.masked = '*'*(len(word))
+        
+    def perform_attempt(self, letter):
+            
         if len(letter) != 1 or not letter.isalpha():
             raise InvalidGuessedLetterException
-            
-        old_masked = game['masked_word']
-        game['masked_word'] = _uncover_word(game['answer_word'], game['masked_word'], letter)
-        game['previous_guesses'].append(letter.lower())
         
-        if old_masked == game['masked_word']:    ## no unmasking; this was a bad guess
-            game['remaining_misses'] -= 1
-        if game['masked_word'].find('*') == -1:
-            raise GameWonException
-        if game['remaining_misses'] == 0:   
-            raise GameLostException
-        '''
+        new_masked = ''
+        
+        for i in range(len(self.answer)):
+            if self.answer[i].lower() == letter.lower():
+                new_masked += self.answer[i].lower()
+            else:
+                new_masked += self.masked[i]   
+        
+        self.masked = new_masked
+        
+        for i in range(len(self.answer)):
+            if self.answer[i].lower() == letter.lower():
+                return GuessAttempt(letter, hit=True)
+        return GuessAttempt(letter, miss=True)
+        
 #HangmanGame: the main interface for the user, the "general" game that will be used.
 class HangmanGame(object):
-    pass
     
     WORD_LIST = ['rmotr', 'python', 'awesome']
     
-    def _select_random_word(list_of_words):
-    if not list_of_words:
-        raise InvalidListOfWordsException
-    i = random.randint(0, len(list_of_words) - 1)
-    print(list_of_words[i])
-    return list_of_words[i]
+    def __init__(self, word_list=WORD_LIST, number_of_guesses=5):
+        self.word_list = word_list   
+        self.guesses = number_of_guesses
+        self.remaining_misses = number_of_guesses
+        random_word = HangmanGame.select_random_word(self.word_list)
+        self.word = GuessWord(random_word)
+        self.previous_guesses = []
     
-    def __init__(self, word_list=['Python', 'rmotr'], num_of_guesses=5):
-        passs
+    def select_random_word(list_of_words):
+        if not list_of_words:
+            raise InvalidListOfWordsException
+        i = random.randint(0, len(list_of_words) - 1)
+        #print(list_of_words[i])
+        return list_of_words[i]
         
-    def _mask_word(word):
-    if len(word) == 0:
-        raise InvalidWordException
-    return '*'*(len(word))
+    def guess(self, c):
+        if self.is_finished():
+            raise GameFinishedException
+        result = self.word.perform_attempt(c)
+        self.previous_guesses.append(c.lower())
+        if result.is_miss():
+            self.remaining_misses -= 1
+        if self.remaining_misses <= 0:
+            raise GameLostException
+        if self.word.masked.find('*') == -1:
+            raise GameWonException
+        
+        return result
     
-    def start_new_game(list_of_words=None, number_of_guesses=5):
-    if list_of_words is None:
-        list_of_words = LIST_OF_WORDS
-
-    word_to_guess = _get_random_word(list_of_words)
-    masked_word = _mask_word(word_to_guess)
-    game = {
-        'answer_word': word_to_guess,
-        'masked_word': masked_word,
-        'previous_guesses': [],
-        'remaining_misses': number_of_guesses,
-    }
+    def is_finished(self):
+        if self.is_won() or self.remaining_misses <= 0:
+            return True
+        else:
+            return False
+        
+    def is_won(self):
+        if self.word.masked.find('*') == -1:
+            return True
+        else:
+            return False
+            
+    def is_lost(self):
+        return self.is_finished() and not self.is_won()
+        
+        
+    
+        
+        
+    
